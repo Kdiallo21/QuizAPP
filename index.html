@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Quiz</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #e0f7fa; /* Light turquoise background */
+    }
+    .container {
+      text-align: center;
+      background: #ffffff; /* White background for quiz */
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 350px; /* Set a fixed width for the container */
+    }
+    .slide { display: none; }
+    .active-slide { display: block; }
+    .correct { color: #388e3c; } /* Green color for correct answers */
+    .incorrect { color: #d32f2f; } /* Red color for incorrect answers */
+    #timer {
+      font-size: 22px;
+      margin-bottom: 20px;
+      color: #00796b; /* Dark teal for the timer */
+    }
+    .question {
+      font-size: 18px;
+      color: #333; /* Dark gray for question text */
+      margin-bottom: 15px;
+    }
+    .answers label {
+      display: block;
+      margin: 10px 0;
+      font-size: 16px;
+      color: #555; /* Slightly lighter gray for answers */
+      cursor: pointer;
+    }
+    input[type="radio"] {
+      margin-right: 10px;
+    }
+    button {
+      background-color: #00796b; /* Teal button color */
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin: 5px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #004d40; /* Darker teal on hover */
+    }
+    #submit {
+      background-color: #d32f2f; /* Red button for submit */
+      display: none;
+    }
+    #submit:hover {
+      background-color: #b71c1c; /* Dark red on hover */
+    }
+    #previous, #next {
+      background-color: #0288d1; /* Blue color for navigation buttons */
+    }
+    #previous:hover, #next:hover {
+      background-color: #01579b; /* Dark blue on hover */
+    }
+    #results {
+      font-size: 20px;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #00796b; /* Dark teal for results */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="timer">Time left: <span id="time">60</span> seconds</div>
+    <div id="quiz"></div>
+    <div>
+      <button id="previous">Previous</button>
+      <button id="next">Next</button>
+      <button id="submit">Submit Quiz</button>
+    </div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    // Functions
+    function buildQuiz() {
+      const output = [];
+      myQuestions.forEach((currentQuestion, questionNumber) => {
+        const answers = [];
+        for (letter in currentQuestion.answers) {
+          answers.push(
+            `<label>
+              <input type="radio" name="question${questionNumber}" value="${letter}">
+              ${letter} :
+              ${currentQuestion.answers[letter]}
+            </label>`
+          );
+        }
+        output.push(
+          `<div class="slide">
+            <div class="question"> ${currentQuestion.question} </div>
+            <div class="answers"> ${answers.join('')} </div>
+          </div>`
+        );
+      });
+      quizContainer.innerHTML = output.join('');
+    }
+
+    function showResults() {
+      const answerContainers = quizContainer.querySelectorAll('.answers');
+      let numCorrect = 0;
+      myQuestions.forEach((currentQuestion, questionNumber) => {
+        const answerContainer = answerContainers[questionNumber];
+        const selector = `input[name=question${questionNumber}]:checked`;
+        const userAnswer = (answerContainer.querySelector(selector) || {}).value;
+        if (userAnswer === currentQuestion.correctAnswer) {
+          numCorrect++;
+          answerContainers[questionNumber].style.color = '#388e3c'; /* Correct answer in green */
+        } else {
+          answerContainers[questionNumber].style.color = '#d32f2f'; /* Incorrect answer in red */
+        }
+      });
+      resultsContainer.innerHTML = `${numCorrect} out of ${myQuestions.length}`;
+    }
+
+    function showSlide(n) {
+      slides[currentSlide].classList.remove('active-slide');
+      slides[n].classList.add('active-slide');
+      currentSlide = n;
+      if (currentSlide === 0) {
+        previousButton.style.display = 'none';
+      } else {
+        previousButton.style.display = 'inline-block';
+      }
+      if (currentSlide === slides.length - 1) {
+        nextButton.style.display = 'none';
+        submitButton.style.display = 'inline-block';
+      } else {
+        nextButton.style.display = 'inline-block';
+        submitButton.style.display = 'none';
+      }
+    }
+
+    function showNextSlide() {
+      showSlide(currentSlide + 1);
+    }
+
+    function showPreviousSlide() {
+      showSlide(currentSlide - 1);
+    }
+
+    function startTimer(duration, display) {
+      let timer = duration, minutes, seconds;
+      const interval = setInterval(() => {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.textContent = minutes + ":" + seconds;
+
+        if (--timer < 0) {
+          clearInterval(interval);
+          showResults();
+        }
+      }, 1000);
+    }
+
+    // Variables
+    const quizContainer = document.getElementById('quiz');
+    const submitButton = document.getElementById('submit');
+    const resultsContainer = document.getElementById('results');
+    const myQuestions = [
+      {
+        question: "Who is the current president of the US?",
+        answers: {
+          a: "Donald Trump",
+          b: "Joe Biden",
+          c: "Barack Obama"
+        },
+        correctAnswer: "b"
+      },
+      {
+        question: "What is the capital of France?",
+        answers: {
+          a: "Berlin",
+          b: "Madrid",
+          c: "Paris"
+        },
+        correctAnswer: "c"
+      },
+      {
+        question: "What is 2 + 2?",
+        answers: {
+          a: "3",
+          b: "4",
+          c: "5"
+        },
+        correctAnswer: "b"
+      },
+      {
+        question: "What is the largest planet in our solar system?",
+        answers: {
+          a: "Earth",
+          b: "Jupiter",
+          c: "Saturn"
+        },
+        correctAnswer: "b"
+      },
+      {
+        question: "What is the boiling point of water?",
+        answers: {
+          a: "90°C",
+          b: "100°C",
+          c: "110°C"
+        },
+        correctAnswer: "b"
+      }
+    ];
+    const previousButton = document.getElementById('previous');
+    const nextButton = document.getElementById('next');
+    let slides;
+    let currentSlide = 0;
+
+    buildQuiz();
+    slides = document.querySelectorAll('.slide');
+    showSlide(currentSlide);
+
+    const timeDisplay = document.getElementById('time');
+    startTimer(60, timeDisplay);
+
+    submitButton.addEventListener('click', showResults);
+    previousButton.addEventListener('click', showPreviousSlide);
+    nextButton.addEventListener('click', showNextSlide);
+  </script>
+</body>
+</html>
+
